@@ -1090,3 +1090,45 @@ emission_total = emission_primary_sum + emission_secondary_sum
 
 # emission data output
 emission_total.to_csv('output_emission\GHG_total.csv')
+
+# %% Embodied CO2 emissions of materials production
+# load emission intensity csv-files
+emission_primary_per_kg = pd.read_csv('files_emission_factor//CO2_primary_per_kg.csv').set_index('Region')
+emission_secondary_per_kg = pd.read_csv('files_emission_factor//CO2_secondary_per_kg.csv').set_index('Region')
+
+# copy 2020 values to historic years
+j = 4
+for i in range(1721,2020):
+    emission_primary_per_kg.insert(loc=j, column=i, value = emission_primary_per_kg['2020'])
+    emission_secondary_per_kg.insert(loc=j, column=i, value = emission_secondary_per_kg['2020'])
+    j = j + 1
+# *NOTE: here we have created these multiple-dimentional structures where the region, material type, and year are specified so that impacts of material production system changes (e.g., energy transition or increased efficiency) on emission factors can be incoporated in excel.
+# For example, one can easily create a well-structured excel file 'CO2_primary_per_kg.csv' with customised emission factor changes and then upload this excel (.CSV) file.
+
+# calculating primary & secondary emissions
+emission_primary_per_kg = emission_primary_per_kg.iloc[:,4:]
+emission_primary_per_kg.columns = materials_primary.columns
+emission_primary = materials_primary * emission_primary_per_kg
+
+emission_secondary_per_kg = emission_secondary_per_kg.iloc[:,4:]
+emission_secondary_per_kg.columns = materials_secondary.columns
+emission_secondary = materials_secondary * emission_secondary_per_kg
+
+index_emission = building_materials_inflow[['flow','type','area','material']]
+emission_primary = pd.concat([index_emission,emission_primary], axis = 1)
+emission_secondary = pd.concat([index_emission,emission_secondary], axis = 1)
+
+emission_primary = emission_primary.reset_index()
+emission_primary.rename(columns = {'Unnamed: 0': 'Region'}, inplace = True)
+emission_secondary = emission_secondary.reset_index()
+emission_secondary.rename(columns = {'Unnamed: 0': 'Region'}, inplace = True)
+
+# calculating total emissions
+emission_primary_grouped = emission_primary.groupby(by = ['Region'])
+emission_primary_sum = emission_primary_grouped.sum()
+emission_secondary_grouped = emission_secondary.groupby(by = ['Region'])
+emission_secondary_sum = emission_secondary_grouped.sum()
+emission_total = emission_primary_sum + emission_secondary_sum
+
+# emission data output
+emission_total.to_csv('output_emission\CO2_total.csv')
