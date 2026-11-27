@@ -25,7 +25,7 @@ import ctypes
 import math
 
 # set current directory
-dir_path = ""
+dir_path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(dir_path)   
 
 # Set general constants
